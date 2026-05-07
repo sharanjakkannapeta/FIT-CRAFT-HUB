@@ -136,54 +136,69 @@
       </div>
     </div>
   </footer>
+<script>
 
-  
-  <script src="script.js"></script>
-  <script>
-    // Handle URL category parameter
-    document.addEventListener('DOMContentLoaded', () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const category = urlParams.get('category');
-      
-      if (category) {
-        // Update filter button
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-          btn.classList.remove('active');
-          if (btn.dataset.category === category) {
-            btn.classList.add('active');
-          }
-        });
-        
-        // Render filtered products
-        renderProducts(category);
-      }
+async function loadProducts() {
+
+  const container = document.getElementById("products-container");
+
+  try {
+
+    const response = await fetch("/api/products");
+
+    const products = await response.json();
+
+    console.log(products);
+
+    container.innerHTML = "";
+
+    if(products.length === 0){
+
+      container.innerHTML = "<h2>No Products Found</h2>";
+
+      return;
+
+    }
+
+    products.forEach(product => {
+
+      container.innerHTML += `
+        <div class="product-card">
+
+          <img 
+            src="${product.image}"
+            style="
+              width:100%;
+              height:250px;
+              object-fit:cover;
+              border-radius:10px;
+            "
+          >
+
+          <h3>${product.name}</h3>
+
+          <p>₹${product.price}</p>
+
+        </div>
+      `;
+
     });
-    async function loadProducts() {
-  const res = await fetch("/api/products");
-  const products = await res.json();
 
-  const container = document.getElementById("products") 
-      || document.getElementById("product-list");
-      <div id="products"></div>
+  } catch(error) {
 
-  if (!container) return;
+    console.log(error);
 
-  container.innerHTML = "";
+    container.innerHTML = "<h2>Error Loading Products</h2>";
 
-  products.forEach(product => {
-    container.innerHTML += `
-      <div class="product-card">
-        <img src="${product.image}" width="200">
-        <h3>${product.name}</h3>
-        <p>₹${product.price}</p>
-      </div>
-    `;
-  });
+  }
+
 }
 
 loadProducts();
-<div id="products"></div>
+
 </script>
+  
+  
 
 </body>
 </html>
