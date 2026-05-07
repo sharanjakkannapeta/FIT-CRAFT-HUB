@@ -1,0 +1,27 @@
+<h2>Track Order</h2>
+
+<input id="orderId" placeholder="Enter Order ID">
+<button onclick="trackOrder()">Track</button>
+
+<div id="result"></div>
+
+<script>
+async function trackOrder(){
+  let id = document.getElementById("orderId").value;
+
+  const res = await fetch("/api/orders");
+  const data = await res.json();
+
+  const order = data.find(o => o._id === id);
+
+  if(!order){
+    document.getElementById("result").innerHTML = "Order not found ❌";
+    return;
+  }
+
+  document.getElementById("result").innerHTML = `
+    <h3>Status: ${order.status}</h3>
+    <p>Amount: ₹${order.amount}</p>
+  `;
+}
+</script>

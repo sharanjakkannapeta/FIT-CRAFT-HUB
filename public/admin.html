@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin Panel - FIT CRAFT HUB</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial;
+      display: flex;
+      background: #090302;
+      color: white;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 200px;
+      background: #5a2328;
+      padding: 20px;
+      height: 100vh;
+    }
+
+    .sidebar h2 {
+      color: #c8bfc7;
+    }
+
+    .sidebar button {
+      width: 100%;
+      margin: 10px 0;
+      padding: 10px;
+      border: none;
+      background: #7a9b76;
+      color: white;
+      cursor: pointer;
+    }
+
+    /* Main */
+    .main {
+      flex: 1;
+      padding: 20px;
+    }
+
+    input {
+      padding: 8px;
+      margin: 5px;
+    }
+
+    button.action {
+      background: #7a9b76;
+      border: none;
+      padding: 8px;
+      cursor: pointer;
+      color: white;
+    }
+
+    .card {
+      background: #8a7e72;
+      padding: 10px;
+      margin: 10px 0;
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <h2>FIT CRAFT HUB</h2>
+  <button onclick="showProducts()">Products</button>
+  <button onclick="showOrders()">Orders</button>
+</div>
+
+<!-- Main -->
+<div class="main" id="content">
+
+  <h2>Add Product</h2>
+
+<input type="text" id="name">
+<input type="text" id="price">
+<input type="text" id="image">
+
+ <button onclick="addProduct()">
+  Add Product
+</button>
+
+  <div id="data"></div>
+
+</div>
+
+<script>
+
+function showProducts(){
+  loadProducts();
+}
+
+function showOrders(){
+  loadOrders();
+}
+
+
+async function addProduct() {
+
+  const name = document.getElementById("name").value;
+  const price = document.getElementById("price").value;
+  const image = document.getElementById("image").value;
+
+  try {
+
+    const response = await fetch("/api/products", {
+
+      method: "POST",
+
+      headers: {
+        "Content-Type": "application/json"
+      },
+
+      body: JSON.stringify({
+        name,
+        price,
+        image
+      })
+
+    });
+
+    const data = await response.json();
+
+    console.log(data);
+
+    alert("Product Added Successfully");
+
+  } catch (err) {
+
+    console.log(err);
+
+    alert("Error adding product");
+
+  }
+ 
+}
+  
+
+  alert("Product Added");
+  loadProducts();
+
+
+async function loadProducts(){
+  const res = await fetch("/api/products");
+  const data = await res.json();
+
+  let html = "<h2>Products</h2>";
+
+  data.forEach(p=>{
+    html += `
+      <div class="card">
+        <img src="${p.image}" width="100">
+        <h3>${p.name}</h3>
+        <p>₹${p.price}</p>
+        <button onclick="deleteProduct('${p._id}')">Delete</button>
+      </div>
+    `;
+  });
+
+  document.getElementById("data").innerHTML = html;
+}
+
+async function deleteProduct(id){
+  await fetch("/api/products/"+id,{
+    method:"DELETE"
+  });
+  loadProducts();
+}
+
+async function loadOrders(){
+  const res = await fetch("/api/orders");
+  const data = await res.json();
+
+  let html = "<h2>Orders</h2>";
+
+  data.forEach(o=>{
+    html += `
+      <div class="card">
+        <p><b>ID:</b> ${o._id}</p>
+        <p><b>Name:</b> ${o.customer.name}</p>
+        <p><b>Amount:</b> ₹${o.amount}</p>
+        <p><b>Status:</b> ${o.status}</p>
+
+        <select onchange="updateStatus('${o._id}', this.value)">
+          <option>Order Placed</option>
+          <option>Shipped</option>
+          <option>Out for Delivery</option>
+          <option>Delivered</option>
+        </select>
+      </div>
+    `;
+  });
+
+  document.getElementById("data").innerHTML = html;
+}
+
+async function updateStatus(id, status){
+  await fetch("/api/orders/"+id,{
+    method:"PUT",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({status})
+  });
+
+  alert("Status Updated");
+}
+
+fetch("/api/products", { method: "POST" })
+</script>
+
+</body>
+</html>

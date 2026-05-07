@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Checkout - Fit Craft Hub</title>
+
+  <!-- Razorpay Script -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+  <style>
+    body {
+      font-family: Arial;
+      background: #f5f5f5;
+      margin: 0;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 40px auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background: black;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <h2>Checkout</h2>
+
+  <h3>Shipping Details</h3>
+  <input id="name" placeholder="Full Name">
+  <input id="phone" placeholder="Phone Number">
+  <input id="address" placeholder="Address">
+
+  <h3>Payment Method</h3>
+
+  <label>
+    <input type="radio" name="payment" value="cod" checked>
+    Cash on Delivery
+  </label><br>
+
+  <label>
+    <input type="radio" name="payment" value="online">
+    Pay Online
+  </label>
+
+  <h3 id="total">Total: ₹500</h3>
+
+  <button onclick="placeOrder()">Place Order</button>
+
+</div>
+
+<script>
+
+async function placeOrder() {
+
+  const name = document.getElementById("name").value;
+  const phone = document.getElementById("phone").value;
+  const address = document.getElementById("address").value;
+
+  const paymentMethod = document.querySelector('input[name="payment"]:checked').value;
+
+  if (!name || !phone || !address) {
+    alert("Please fill all details");
+    return;
+  }
+
+  const amount = 500; // you can replace with cart total
+
+  // 🟢 COD ORDER
+  if (paymentMethod === "cod") {
+
+    await fetch("/api/orders", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        customer: { name, phone, address },
+        amount,
+        paymentMethod: "COD",
+        status: "Placed"
+      })
+    });
+
+    alert("Order placed successfully (COD)");
+    window.location.href = "my-orders.html";
+  }
+
+  // 🔵 ONLINE PAYMENT
+  else {
+
+    // 1️⃣ Create Razorpay order from backend
+    const res = await fetch("/api/payment/create-order", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ amount })
+    });
+
+    const data = await res.json();
+
+    // 2️⃣ Open Razorpay
+    const options = {
+      key: "rzp_test_xxxxx", // 🔴 replace with your key
+      amount: data.amount,
+      currency: "INR",
+      order_id: data.id,
+      name: "FIT CRAFT",
+      description: "Order Payment",
+
+      prefill: {
+        name: name,
+        contact: phone
+      },
+
+      handler: async function (response) {
+
+        // 3️⃣ Save order after payment success
+        await fetch("/api/orders", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            customer: { name, phone, address },
+            amount,
+            paymentMethod: "ONLINE",
+            paymentId: response.razorpay_payment_id,
+            status: "Paid"
+          })
+        });
+
+        alert("Payment Successful ✅");
+        window.location.href = "my-orders.html";
+      }
+    };
+
+    const rzp = new Razorpay(options);
+    rzp.open();
+
+    // ❌ Failure handler
+    rzp.on("payment.failed", function (response) {
+      alert("Payment Failed: " + response.error.description);
+    });
+  }
+}
+
+</script>
+
+</body>
+</html>
